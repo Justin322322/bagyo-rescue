@@ -8,6 +8,7 @@ import {
   type SortingState,
 } from '@tanstack/react-table';
 import { Link } from '@tanstack/react-router';
+import { IconArrowsSort, IconSortAscending, IconSortDescending } from '@tabler/icons-react';
 import { type ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { crmRoutes } from './crm-routes';
 import type {
@@ -16,10 +17,27 @@ import type {
   CrmField,
   CrmMode,
   CrmPayload,
+  CrmTagTone,
   CrmValue,
   RecordFormSubmitHandler,
 } from './types';
 import { formatValue, getErrorMessage, readPayloadFromForm, toDatetimeInputValue } from './utils';
+import { Page, PageHeader, PageTitle, PageDescription } from '@/components/ui/page';
+import { Button } from '@/components/ui/button';
+import { Input, Select, Textarea, Checkbox } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertBody } from '@/components/ui/alert';
+import {
+  TableWrap,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableHeaderCell,
+  TableCell,
+} from '@/components/ui/data-table';
+import { cn } from '@/lib/utils';
 
 export const crmQueryKey = ['/records'];
 
@@ -103,33 +121,44 @@ export function CrmCrudPage({ dataset }: CrmCrudPageProps) {
   }
 
   return (
-    <main className="page page--wide">
-      <section className="toolbar toolbar--records">
-        <div>
-          <p className="eyebrow">Supabase data access</p>
-          <h1>{dataset.label}</h1>
-          <p className="toolbar-copy">{dataset.description}</p>
+    <Page width="wide" className="flex flex-col gap-6">
+      <PageHeader>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex flex-col gap-2">
+            <PageTitle>{dataset.label}</PageTitle>
+            <PageDescription>{dataset.description}</PageDescription>
+          </div>
+          <Badge tone={recordsQuery.isFetching ? 'primary' : 'safe'}>
+            {recordsQuery.isFetching ? 'Refreshing' : 'Synced'}
+          </Badge>
         </div>
-        <span className="sync-state">{recordsQuery.isFetching ? 'Refreshing' : 'Synced view'}</span>
-      </section>
+      </PageHeader>
 
-      <section className="crm-layout" aria-label={`${dataset.label} data access`}>
+      <section
+        aria-label={`${dataset.label} data access`}
+        className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[15rem_minmax(0,1fr)]"
+      >
         <CrmNavigation activeDatasetId={dataset.id} />
 
-        <section className="crm-main">
-          <div className="crm-heading">
-            <div>
-              <p className="eyebrow">{dataset.metricLabel}</p>
-              <h2>{dataset.label}</h2>
-              <p>{dataset.description}</p>
+        <section className="flex min-w-0 flex-col gap-4">
+          <div className="flex flex-wrap items-start justify-between gap-4 rounded-md border bg-surface p-5 shadow-raised">
+            <div className="flex min-w-0 flex-col gap-1">
+              <span className="text-caption uppercase tracking-wide text-muted-foreground">
+                {dataset.metricLabel}
+              </span>
+              <h2 className="text-heading-lg text-foreground">{dataset.label}</h2>
+              <p className="text-body-md text-muted-foreground">{dataset.description}</p>
             </div>
-            <div className="crm-actions">
-              <div className="crm-stat">
-                <span>{recordsQuery.data?.totalRecords ?? 0}</span>
-                <p>Total records</p>
+            <div className="flex flex-wrap items-stretch gap-3">
+              <div className="flex min-w-36 flex-col gap-1 rounded-md border bg-bg p-4">
+                <span className="text-heading-lg font-semibold text-foreground">
+                  {recordsQuery.data?.totalRecords ?? 0}
+                </span>
+                <span className="text-label-md text-muted-foreground">Total records</span>
               </div>
-              <button
-                className="button button--secondary"
+              <Button
+                variant="primary"
+                size="lg"
                 type="button"
                 onClick={() => {
                   setMode('create');
@@ -137,22 +166,22 @@ export function CrmCrudPage({ dataset }: CrmCrudPageProps) {
                 }}
               >
                 New {dataset.singularLabel}
-              </button>
+              </Button>
             </div>
           </div>
 
           {dataset.searchPlaceholder ? (
-            <label className="crm-search">
-              <span>Search</span>
-              <input
+            <Label htmlFor="crm-search" hint="Search">
+              <Input
+                id="crm-search"
                 value={searchText}
                 onChange={event => setSearchText(event.target.value)}
                 placeholder={dataset.searchPlaceholder}
               />
-            </label>
+            </Label>
           ) : null}
 
-          <div className="crm-content">
+          <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
             <CrmTable
               columns={dataset.columns}
               isLoading={recordsQuery.isLoading}
@@ -166,7 +195,10 @@ export function CrmCrudPage({ dataset }: CrmCrudPageProps) {
               }}
             />
 
-            <aside className="record-panel" aria-label="Selected record">
+            <aside
+              aria-label="Selected record"
+              className="sticky top-20 flex min-h-80 flex-col gap-4 rounded-md border bg-surface p-5 shadow-raised"
+            >
               {mode === 'create' || (mode === 'edit' && selectedRow) ? (
                 <RecordForm
                   dataset={dataset}
@@ -181,7 +213,7 @@ export function CrmCrudPage({ dataset }: CrmCrudPageProps) {
                   onSubmit={handleSubmit}
                 />
               ) : recordsQuery.isLoading ? (
-                <p className="empty-state">Loading records.</p>
+                <p className="text-body-md text-muted-foreground">Loading records.</p>
               ) : selectedRow ? (
                 <RecordProfile
                   dataset={dataset}
@@ -194,18 +226,24 @@ export function CrmCrudPage({ dataset }: CrmCrudPageProps) {
                   }}
                 />
               ) : (
-                <p className="empty-state">Select a record to inspect it.</p>
+                <p className="text-body-md text-muted-foreground">Select a record to inspect it.</p>
               )}
             </aside>
           </div>
 
           {recordsQuery.isError ? (
-            <p className="error-state">{getErrorMessage(recordsQuery.error)}</p>
+            <Alert tone="danger">
+              <AlertBody>{getErrorMessage(recordsQuery.error)}</AlertBody>
+            </Alert>
           ) : null}
-          {mode === 'view' && formError ? <p className="error-state">{formError}</p> : null}
+          {mode === 'view' && formError ? (
+            <Alert tone="danger">
+              <AlertBody>{formError}</AlertBody>
+            </Alert>
+          ) : null}
         </section>
       </section>
-    </main>
+    </Page>
   );
 }
 
@@ -215,17 +253,32 @@ type CrmNavigationProps = {
 
 export function CrmNavigation({ activeDatasetId }: CrmNavigationProps) {
   return (
-    <aside className="crm-nav" aria-label="Record types">
-      {crmRoutes.map(route => (
-        <Link
-          key={route.datasetId}
-          to={route.to}
-          className={route.datasetId === activeDatasetId ? 'crm-nav-item active' : 'crm-nav-item'}
-          activeProps={{ className: 'crm-nav-item active' }}
-        >
-          <span>{route.label}</span>
-        </Link>
-      ))}
+    <aside
+      aria-label="Record types"
+      className="flex flex-col gap-1 rounded-md border bg-surface p-2 shadow-raised lg:sticky lg:top-20"
+    >
+      {crmRoutes.map(route => {
+        const isActive = route.datasetId === activeDatasetId;
+
+        return (
+          <Link
+            key={route.datasetId}
+            to={route.to}
+            className={cn(
+              'flex min-h-11 items-center rounded-sm px-3 py-2 text-body-md',
+              isActive
+                ? 'bg-primary-soft text-primary font-semibold'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            )}
+            activeProps={{
+              className:
+                'flex min-h-11 items-center rounded-sm px-3 py-2 text-body-md bg-primary-soft text-primary font-semibold',
+            }}
+          >
+            <span>{route.label}</span>
+          </Link>
+        );
+      })}
     </aside>
   );
 }
@@ -251,9 +304,15 @@ function CrmTable({ columns, isLoading, label, rows, selectedRowId, onSelect }: 
           const row = info.row.original;
 
           return (
-            <button className="row-title" type="button" onClick={() => onSelect(row)}>
-              <strong>{row.title}</strong>
-              {row.subtitle ? <span>{row.subtitle}</span> : null}
+            <button
+              type="button"
+              onClick={() => onSelect(row)}
+              className="flex min-h-10 flex-col items-start gap-1 text-left"
+            >
+              <strong className="text-body-md font-semibold text-foreground">{row.title}</strong>
+              {row.subtitle ? (
+                <span className="text-label-md text-muted-foreground">{row.subtitle}</span>
+              ) : null}
             </button>
           );
         },
@@ -270,72 +329,76 @@ function CrmTable({ columns, isLoading, label, rows, selectedRowId, onSelect }: 
   const table = useReactTable({
     data: rows,
     columns: tableColumns,
-    state: {
-      sorting,
-    },
+    state: { sorting },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
   });
 
   return (
-    <div className="table-wrap crm-table-wrap">
-      <table>
-        <thead>
+    <TableWrap>
+      <Table>
+        <TableHead>
           {table.getHeaderGroups().map(headerGroup => (
-            <tr key={headerGroup.id}>
+            <TableRow key={headerGroup.id}>
               {headerGroup.headers.map(header => (
-                <th key={header.id}>
+                <TableHeaderCell key={header.id}>
                   {header.isPlaceholder ? null : (
                     <button
-                      className="table-sort-button"
                       type="button"
                       disabled={!header.column.getCanSort()}
                       onClick={header.column.getToggleSortingHandler()}
+                      className="flex w-full min-h-10 items-center justify-between gap-2 text-left text-label-md font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground"
                     >
                       <span>{flexRender(header.column.columnDef.header, header.getContext())}</span>
-                      <span aria-hidden="true">
-                        {{
-                          asc: 'Asc',
-                          desc: 'Desc',
-                        }[header.column.getIsSorted() as string] ?? 'Sort'}
+                      <span aria-hidden="true" className="text-caption text-muted-foreground">
+                        {header.column.getIsSorted() === 'asc' ? (
+                          <IconSortAscending className="size-3.5" />
+                        ) : header.column.getIsSorted() === 'desc' ? (
+                          <IconSortDescending className="size-3.5" />
+                        ) : (
+                          <IconArrowsSort className="size-3.5" />
+                        )}
                       </span>
                     </button>
                   )}
-                </th>
+                </TableHeaderCell>
               ))}
-            </tr>
+            </TableRow>
           ))}
-        </thead>
-        <tbody>
+        </TableHead>
+        <TableBody>
           {table.getRowModel().rows.map(tableRow => (
-            <tr
+            <TableRow
               key={tableRow.id}
-              className={tableRow.original.id === selectedRowId ? 'selected' : undefined}
+              selected={tableRow.original.id === selectedRowId}
               onClick={() => onSelect(tableRow.original)}
+              className="cursor-pointer"
             >
               {tableRow.getVisibleCells().map(cell => (
-                <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                <TableCell key={cell.id}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </TableCell>
               ))}
-            </tr>
+            </TableRow>
           ))}
           {isLoading ? (
-            <tr>
-              <td colSpan={table.getAllLeafColumns().length}>
-                <span className="empty-state">Loading records.</span>
-              </td>
-            </tr>
+            <TableRow>
+              <TableCell colSpan={table.getAllLeafColumns().length}>
+                <span className="text-body-md text-muted-foreground">Loading records.</span>
+              </TableCell>
+            </TableRow>
           ) : null}
           {!isLoading && table.getRowModel().rows.length === 0 ? (
-            <tr>
-              <td colSpan={table.getAllLeafColumns().length}>
-                <span className="empty-state">No records found.</span>
-              </td>
-            </tr>
+            <TableRow>
+              <TableCell colSpan={table.getAllLeafColumns().length}>
+                <span className="text-body-md text-muted-foreground">No records found.</span>
+              </TableCell>
+            </TableRow>
           ) : null}
-        </tbody>
-      </table>
-    </div>
+        </TableBody>
+      </Table>
+    </TableWrap>
   );
 }
 
@@ -350,46 +413,74 @@ type RecordProfileProps = {
 function RecordProfile({ dataset, isDeleting, row, onDelete, onEdit }: RecordProfileProps) {
   return (
     <>
-      <div className="record-panel-heading">
-        <div>
-          <p className="eyebrow">Record profile</p>
-          <h3>{row.title}</h3>
-          {row.subtitle ? <p>{row.subtitle}</p> : null}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1">
+          <span className="text-caption uppercase tracking-wide text-muted-foreground">
+            Record profile
+          </span>
+          <h3 className="text-heading-md text-foreground">{row.title}</h3>
+          {row.subtitle ? (
+            <p className="text-body-md text-muted-foreground">{row.subtitle}</p>
+          ) : null}
         </div>
         {row.tags?.length ? (
-          <div className="tag-list">
+          <div className="flex flex-wrap gap-2">
             {row.tags.map(tag => (
-              <span key={`${tag.label}-${tag.tone}`} className={`pill pill--${tag.tone}`}>
+              <Badge key={`${tag.label}-${tag.tone}`} tone={mapCrmToneToBadgeTone(tag.tone)}>
                 {tag.label}
-              </span>
+              </Badge>
             ))}
           </div>
         ) : null}
-        <div className="record-actions">
-          <button className="button button--secondary" type="button" onClick={onEdit}>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" size="md" type="button" onClick={onEdit}>
             Edit
-          </button>
-          <button
-            className="button button--danger"
+          </Button>
+          <Button
+            variant="danger"
+            size="md"
             type="button"
-            disabled={isDeleting}
+            isLoading={isDeleting}
             onClick={onDelete}
           >
             Delete {dataset.singularLabel}
-          </button>
+          </Button>
         </div>
       </div>
 
-      <dl className="record-details">
+      <dl className="flex flex-col">
         {row.details.map(detail => (
-          <div key={detail.label}>
-            <dt>{detail.label}</dt>
-            <dd>{formatValue(detail.value)}</dd>
+          <div
+            key={detail.label}
+            className="flex flex-col gap-1 border-t border-border py-3 first:border-t-0"
+          >
+            <dt className="text-caption font-semibold uppercase tracking-wide text-muted-foreground">
+              {detail.label}
+            </dt>
+            <dd className="m-0 break-words text-body-md text-foreground">
+              {formatValue(detail.value)}
+            </dd>
           </div>
         ))}
       </dl>
     </>
   );
+}
+
+function mapCrmToneToBadgeTone(tone: CrmTagTone) {
+  switch (tone) {
+    case 'critical':
+      return 'danger' as const;
+    case 'high':
+      return 'signal' as const;
+    case 'success':
+      return 'safe' as const;
+    case 'medium':
+    case 'low':
+    case 'neutral':
+    default:
+      return 'neutral' as const;
+  }
 }
 
 type RecordFormProps = {
@@ -512,17 +603,17 @@ function RecordForm({
   }
 
   return (
-    <form className="record-form" onSubmit={onSubmit}>
-      <div className="record-panel-heading">
-        <div>
-          <p className="eyebrow">{mode === 'create' ? 'Create record' : 'Update record'}</p>
-          <h3>
-            {mode === 'create' ? `New ${dataset.singularLabel}` : `Edit ${dataset.singularLabel}`}
-          </h3>
-        </div>
+    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <span className="text-caption uppercase tracking-wide text-muted-foreground">
+          {mode === 'create' ? 'Create record' : 'Update record'}
+        </span>
+        <h3 className="text-heading-md text-foreground">
+          {mode === 'create' ? `New ${dataset.singularLabel}` : `Edit ${dataset.singularLabel}`}
+        </h3>
       </div>
 
-      <div className="record-form-fields">
+      <div className="flex flex-col gap-3">
         {dataset.formFields.map(field => (
           <RecordField
             key={field.name}
@@ -536,20 +627,25 @@ function RecordForm({
         ))}
       </div>
 
-      {error ? <p className="error-state">{error}</p> : null}
+      {error ? (
+        <Alert tone="danger">
+          <AlertBody>{error}</AlertBody>
+        </Alert>
+      ) : null}
 
-      <div className="record-actions">
-        <button type="submit" disabled={isSubmitting}>
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" size="md" isLoading={isSubmitting}>
           {mode === 'create' ? 'Create' : 'Save'}
-        </button>
-        <button
-          className="button button--secondary"
+        </Button>
+        <Button
           type="button"
+          variant="secondary"
+          size="md"
           disabled={isSubmitting}
           onClick={onCancel}
         >
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -578,10 +674,9 @@ function RecordField({
 
   if (field.type === 'checkbox') {
     return (
-      <label className="record-checkbox">
-        <input
+      <label className="flex min-h-10 items-center gap-2 text-body-md text-foreground">
+        <Checkbox
           name={field.name}
-          type="checkbox"
           checked={Boolean(resolvedValue)}
           onChange={event => onChange(field, event)}
         />
@@ -592,9 +687,10 @@ function RecordField({
 
   if (field.type === 'select') {
     return (
-      <label className="record-field">
-        <span>{field.label}</span>
-        <select
+      <Label htmlFor={`field-${field.name}`}>
+        {field.label}
+        <Select
+          id={`field-${field.name}`}
           name={field.name}
           value={valueAsString || field.options?.[0] || ''}
           required={field.required}
@@ -605,29 +701,31 @@ function RecordField({
               {option}
             </option>
           ))}
-        </select>
-      </label>
+        </Select>
+      </Label>
     );
   }
 
   if (field.type === 'textarea') {
     return (
-      <label className="record-field">
-        <span>{field.label}</span>
-        <textarea
+      <Label htmlFor={`field-${field.name}`}>
+        {field.label}
+        <Textarea
+          id={`field-${field.name}`}
           name={field.name}
           value={valueAsString}
           required={field.required}
           onChange={event => onTextareaChange(field, event)}
         />
-      </label>
+      </Label>
     );
   }
 
   return (
-    <label className="record-field">
-      <span>{field.label}</span>
-      <input
+    <Label htmlFor={`field-${field.name}`} hint={isGenerating ? 'Generating…' : undefined}>
+      {field.label}
+      <Input
+        id={`field-${field.name}`}
         name={field.name}
         type={field.type === 'datetime' ? 'datetime-local' : field.type}
         value={field.type === 'datetime' ? toDatetimeInputValue(valueAsString) : valueAsString}
@@ -635,8 +733,7 @@ function RecordField({
         step={field.type === 'number' ? 'any' : undefined}
         onChange={event => onChange(field, event)}
       />
-      {isGenerating ? <small className="record-field-note">Generating code...</small> : null}
-    </label>
+    </Label>
   );
 }
 

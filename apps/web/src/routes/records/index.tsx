@@ -1,6 +1,8 @@
 import { Link, createFileRoute } from '@tanstack/react-router';
+import { IconArrowRight } from '@tabler/icons-react';
 import { CrmNavigation } from '@/features/crm/crm-crud-page';
 import { crmRoutes } from '@/features/crm/crm-routes';
+import { Page, PageHeader, PageTitle, PageDescription } from '@/components/ui/page';
 
 export const Route = createFileRoute('/records/')({
   component: RecordsIndexPage,
@@ -8,43 +10,55 @@ export const Route = createFileRoute('/records/')({
 
 function RecordsIndexPage() {
   return (
-    <main className="page page--wide">
-      <section className="toolbar toolbar--records">
-        <div>
-          <p className="eyebrow">Supabase data access</p>
-          <h1>CRM workspace</h1>
-          <p className="toolbar-copy">
-            Choose a dedicated data page to browse, create, update, and delete operational records.
-          </p>
-        </div>
-      </section>
+    <Page width="wide" className="flex flex-col gap-6">
+      <PageHeader>
+        <PageTitle>CRM workspace</PageTitle>
+        <PageDescription>
+          Browse, create, update, and delete operational records. Pick a module to start.
+        </PageDescription>
+      </PageHeader>
 
-      <section className="crm-layout" aria-label="Data access routes">
+      <section
+        aria-label="Data access routes"
+        className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[15rem_minmax(0,1fr)]"
+      >
         <CrmNavigation />
-        <section className="crm-main">
-          <div className="crm-heading">
-            <div>
-              <p className="eyebrow">Data modules</p>
-              <h2>Operational CRM tables</h2>
-              <p>Select a module to open its searchable table and record editor.</p>
-            </div>
-          </div>
+        <section className="flex min-w-0 flex-col gap-4">
+          <header className="flex flex-col gap-1 rounded-md border bg-surface p-5 shadow-raised">
+            <span className="text-caption uppercase tracking-wide text-muted-foreground">
+              Data modules
+            </span>
+            <h2 className="text-heading-lg text-foreground">Operational CRM tables</h2>
+            <p className="text-body-md text-muted-foreground">
+              Select a module to open its searchable table and record editor.
+            </p>
+          </header>
 
-          <ul className="crm-route-list">
+          <ul className="flex flex-col gap-2">
             {crmRoutes.map(route => (
               <li key={route.datasetId}>
-                <Link to={route.to} className="crm-route-link">
-                  <span>
-                    <strong>{route.label}</strong>
-                    <small>{route.description}</small>
+                <Link
+                  to={route.to}
+                  className="flex min-h-18 items-center justify-between gap-4 rounded-md border bg-surface px-5 py-4 shadow-raised hover:border-primary/40"
+                >
+                  <span className="flex flex-col gap-1">
+                    <strong className="text-body-lg font-semibold text-foreground">
+                      {route.label}
+                    </strong>
+                    <small className="text-label-md text-muted-foreground">
+                      {route.description}
+                    </small>
                   </span>
-                  <span className="crm-route-action">Open</span>
+                  <span className="inline-flex items-center gap-1 text-label-md font-semibold text-primary">
+                    Open
+                    <IconArrowRight className="size-4" aria-hidden="true" />
+                  </span>
                 </Link>
               </li>
             ))}
           </ul>
         </section>
       </section>
-    </main>
+    </Page>
   );
 }

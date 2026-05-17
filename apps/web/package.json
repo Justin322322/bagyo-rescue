@@ -10,6 +10,8 @@
     "clean": "rm -rf dist .turbo node_modules"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.2.5",
+    "@fontsource/outfit": "^5.2.5",
     "@supabase/supabase-js": "^2.105.4",
     "@tabler/icons-react": "^3.44.0",
     "@tailwindcss/vite": "^4.3.0",
