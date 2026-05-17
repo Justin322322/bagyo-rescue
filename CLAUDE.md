@@ -14,7 +14,10 @@ Required versions:
 
 ## Running Services
 
-Assume `pnpm dev` and `pnpm db:start` are already running. Do not start or restart them.
+Assume `pnpm dev` is already running. Do not start or restart it.
+
+Database work targets Supabase only. Use Prisma in `packages/prisma` for schema
+and migrations, with `DATABASE_URL` pointing at the Supabase database.
 
 Use existing scripts when you need checks, builds, or database tasks:
 
@@ -48,13 +51,13 @@ tools/            # Context factory, rules, and sync tooling
 
 ## Quick Reference
 
-| Task                         | Where to Look                                           |
-| ---------------------------- | ------------------------------------------------------- |
-| Web route                    | `apps/web/src/routes/`                                  |
-| Web data hook                | `apps/web/src/data/`                                    |
-| Local IndexedDB data         | `apps/web/src/db/`                                      |
-| PWA/service worker behavior  | `apps/web/vite.config.ts`, `apps/web/src/pwa/`          |
-| Prisma schema                | `packages/prisma/schema.prisma`                         |
-| Database migration           | `packages/prisma/migrations/`                           |
-| Frontend rules               | `tools/context-factory/frontend/rules/`                 |
-| Sync context/rules           | `tools/context-factory/scripts/sync-rules.mjs`          |
+| Task                        | Where to Look                                  |
+| --------------------------- | ---------------------------------------------- |
+| Web route                   | `apps/web/src/routes/`                         |
+| Web data hook               | `apps/web/src/data/`                           |
+| Local IndexedDB data        | `apps/web/src/db/`                             |
+| PWA/service worker behavior | `apps/web/vite.config.ts`, `apps/web/src/pwa/` |
+| Prisma schema               | `packages/prisma/schema.prisma`                |
+| Database migration          | `packages/prisma/migrations/`                  |
+| Frontend rules              | `tools/context-factory/frontend/rules/`        |
+| Sync context/rules          | `tools/context-factory/scripts/sync-rules.mjs` |

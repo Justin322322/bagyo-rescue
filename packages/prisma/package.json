@@ -3,8 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "db:start": "docker compose -f docker-compose-db.yaml up -d",
-    "db:stop": "docker compose -f docker-compose-db.yaml down",
     "db:pull": "prisma db pull",
     "db:deploy": "prisma migrate deploy",
     "db:dev": "prisma migrate dev",

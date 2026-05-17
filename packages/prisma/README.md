@@ -5,20 +5,35 @@ not install `@prisma/client`.
 
 ## Setup
 
-Create `packages/prisma/.env` with:
+Create `packages/prisma/.env` with your Supabase database connection string:
 
 ```sh
-DATABASE_URL="postgresql://<user>:<password>@localhost:<port>/<database>"
+DATABASE_URL="postgresql://<db-user>.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres?schema=public"
 ```
 
-If `POSTGRES_DB` is not set in `packages/prisma/docker-compose-db.yaml`, the
-default database name is the same as `POSTGRES_USER`.
+Use a direct/session database connection for Prisma migrations. The Supabase
+project remains the only supported database target; local Docker Postgres is not
+managed by this package.
+
+For the Supabase session pooler connection, the username must include the exact
+project ref, for example `postgres.<project-ref>` or `prisma.<project-ref>`.
+If Supabase returns `tenant/user ... not found`, re-copy the session pooler
+connection string from the Supabase dashboard and make sure the pooler host
+region, database user, and project ref match.
+
+Supabase recommends a dedicated Prisma database user with privileges on the
+`public` schema. If you create one, grant it usage, create, table, routine, and
+sequence privileges on `public`, then use `prisma.<project-ref>` as the pooler
+username.
+
+If `db:dev` needs a shadow database, set `SHADOW_DATABASE_URL` to a separate
+Supabase development database.
 
 ## Commands
 
 ```sh
-pnpm --filter @bagyo-rescue/prisma migrate:dev
-pnpm --filter @bagyo-rescue/prisma migrate:deploy
-pnpm --filter @bagyo-rescue/prisma migrate:status
+pnpm --filter @bagyo-rescue/prisma db:dev
+pnpm --filter @bagyo-rescue/prisma db:deploy
+pnpm --filter @bagyo-rescue/prisma db:status
 pnpm --filter @bagyo-rescue/prisma db:pull
 ```
