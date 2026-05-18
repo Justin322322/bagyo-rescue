@@ -10,7 +10,7 @@ import {
   IconTrash,
   IconX,
 } from '@tabler/icons-react';
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import {
   type ResidentAccessSession,
   useResidentAccessSession,
@@ -29,13 +29,14 @@ import type {
   ReportHistoryWaterLevel,
   ReportHistoryWithOutboxState,
 } from '@/lib/dexie';
-import { Alert, AlertBody } from '@/components/ui/alert';
+import { Alert, AlertBody, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input, Select, Textarea } from '@/components/ui/input';
+import { Input, Textarea } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { OfflineBadge, useOnlineStatus } from '@/components/ui/offline-badge';
 import { Page, PageDescription, PageHeader, PageTitle } from '@/components/ui/page';
+import { Toast, ToastBody, ToastClose } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 
 type CapturedLocation = {
@@ -52,10 +53,73 @@ type FloodReportWaterLevel = NonNullable<ReportHistoryWaterLevel>;
 
 const DEFAULT_FLOOD_REPORT_WATER_LEVEL = 'Unknown' satisfies FloodReportWaterLevel;
 
+const WATER_LEVEL_OPTIONS = [
+  { value: 'Ankle', label: 'Ankle', description: 'Bukong-bukong' },
+  { value: 'Knee', label: 'Knee', description: 'Tuhod' },
+  { value: 'Waist', label: 'Waist', description: 'Baywang' },
+  { value: 'Chest', label: 'Chest', description: 'Dibdib' },
+  { value: 'Roof', label: 'Roof', description: 'Bubong' },
+  { value: 'Unknown', label: 'Unknown', description: 'Hindi sigurado' },
+] satisfies Array<{
+  value: FloodReportWaterLevel;
+  label: string;
+  description: string;
+}>;
+
 function getFloodReportWaterLevel(value: string | null | undefined) {
   const isWaterLevel = Constants.public.Enums.water_level.some(level => level === value);
 
   return isWaterLevel ? (value as FloodReportWaterLevel) : DEFAULT_FLOOD_REPORT_WATER_LEVEL;
+}
+
+function WaterLevelButtonGroup({
+  id,
+  name = 'waterLevel',
+  defaultValue,
+  className,
+}: {
+  id: string;
+  name?: string;
+  defaultValue: FloodReportWaterLevel;
+  className?: string;
+}) {
+  const legendId = `${id}-legend`;
+
+  return (
+    <fieldset aria-labelledby={legendId} className={cn('flex flex-col gap-1.5', className)}>
+      <legend id={legendId} className="mb-1.5 text-label-md text-foreground">
+        <span className="flex items-baseline justify-between gap-3">
+          <span className="font-medium">Water level</span>
+        </span>
+      </legend>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {WATER_LEVEL_OPTIONS.map(option => (
+          <label key={option.value} className="block cursor-pointer">
+            <input
+              className="peer sr-only"
+              type="radio"
+              name={name}
+              value={option.value}
+              defaultChecked={option.value === defaultValue}
+            />
+            <span
+              className={cn(
+                'flex h-20 flex-col items-center justify-center gap-1 rounded-md border border-border bg-surface px-2.5 py-3 text-center',
+                'transition-colors hover:border-primary/60 hover:bg-primary-soft/30',
+                'peer-focus-visible:border-primary peer-focus-visible:ring-1 peer-focus-visible:ring-ring',
+                'peer-checked:border-primary peer-checked:bg-primary-soft/70 peer-checked:text-primary'
+              )}
+            >
+              <span className="text-body-md font-semibold leading-tight">{option.label}</span>
+              <span className="text-caption leading-tight text-muted-foreground">
+                {option.description}
+              </span>
+            </span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
 }
 
 export function ReportActionPage({ type }: ReportActionPageProps) {
@@ -106,6 +170,14 @@ function ReportForm({
     [reportHistories]
   );
   const isFloodReport = type === 'Flood Report';
+
+  useEffect(() => {
+    if (!feedback) return;
+
+    const timeoutId = window.setTimeout(() => setFeedback(null), 4_000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [feedback]);
 
   async function handleLocate() {
     setLocationError(null);
@@ -223,7 +295,15 @@ function ReportForm({
           ) : null}
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Label htmlFor="phoneNumber" className="sm:col-span-2">
+            {isFloodReport ? (
+              <WaterLevelButtonGroup
+                id="waterLevel"
+                className="sm:col-span-2"
+                defaultValue={getFloodReportWaterLevel(access?.session.house.water_level)}
+              />
+            ) : null}
+
+            <Label htmlFor="phoneNumber">
               Phone number (optional)
               <Input
                 id="phoneNumber"
@@ -249,23 +329,6 @@ function ReportForm({
               />
             </Label>
 
-            {isFloodReport ? (
-              <Label htmlFor="waterLevel">
-                Water level
-                <Select
-                  id="waterLevel"
-                  name="waterLevel"
-                  defaultValue={getFloodReportWaterLevel(access?.session.house.water_level)}
-                >
-                  {Constants.public.Enums.water_level.map(level => (
-                    <option key={level} value={level}>
-                      {level}
-                    </option>
-                  ))}
-                </Select>
-              </Label>
-            ) : null}
-
             <Label htmlFor="note" className="sm:col-span-2">
               Note
               <Textarea
@@ -286,9 +349,12 @@ function ReportForm({
             </Alert>
           ) : null}
           {feedback ? (
-            <Alert tone="safe">
-              <AlertBody>{feedback}</AlertBody>
-            </Alert>
+            <div className="fixed left-4 right-4 top-4 z-50 flex justify-end sm:left-auto sm:right-6 sm:top-6">
+              <Toast tone="safe" className="sm:max-w-lg">
+                <ToastBody>{feedback}</ToastBody>
+                <ToastClose aria-label="Dismiss notification" onClick={() => setFeedback(null)} />
+              </Toast>
+            </div>
           ) : null}
           {!isOnline ? (
             <Alert tone="signal">
@@ -296,9 +362,13 @@ function ReportForm({
             </Alert>
           ) : null}
           {!access ? (
-            <Alert tone="signal">
-              <AlertBody>
-                Reports stay local until this device is linked with a family code and PIN.
+            <Alert
+              tone="signal"
+              className="border-signal/30 border-l-4 border-l-signal bg-signal-soft/60 pl-4 [&_[data-slot=alert-rail]]:hidden"
+            >
+              <AlertTitle>Saved on this device only</AlertTitle>
+              <AlertBody className="text-label-md">
+                Link family code and PIN later to sync when signal returns.
               </AlertBody>
             </Alert>
           ) : null}
@@ -687,7 +757,15 @@ function ReportHistoryEditForm({
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Label htmlFor={`edit-phone-${reportHistory.id}`} className="sm:col-span-2">
+        {isFloodReport ? (
+          <WaterLevelButtonGroup
+            id={`edit-water-${reportHistory.id}`}
+            className="sm:col-span-2"
+            defaultValue={getFloodReportWaterLevel(reportHistory.water_level)}
+          />
+        ) : null}
+
+        <Label htmlFor={`edit-phone-${reportHistory.id}`}>
           Phone number (optional)
           <Input
             id={`edit-phone-${reportHistory.id}`}
@@ -712,23 +790,6 @@ function ReportHistoryEditForm({
             required
           />
         </Label>
-
-        {isFloodReport ? (
-          <Label htmlFor={`edit-water-${reportHistory.id}`}>
-            Water level
-            <Select
-              id={`edit-water-${reportHistory.id}`}
-              name="waterLevel"
-              defaultValue={getFloodReportWaterLevel(reportHistory.water_level)}
-            >
-              {Constants.public.Enums.water_level.map(level => (
-                <option key={level} value={level}>
-                  {level}
-                </option>
-              ))}
-            </Select>
-          </Label>
-        ) : null}
 
         <Label htmlFor={`edit-note-${reportHistory.id}`} className="sm:col-span-2">
           Note
