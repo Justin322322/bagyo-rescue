@@ -96,7 +96,7 @@ function WaterLevelButtonGroup({
         </span>
       </legend>
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="grid grid-cols-1 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {WATER_LEVEL_OPTIONS.map(option => (
             <label key={option.value} className="block cursor-pointer">
               <input
