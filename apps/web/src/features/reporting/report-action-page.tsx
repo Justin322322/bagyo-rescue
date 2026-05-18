@@ -95,8 +95,8 @@ function WaterLevelButtonGroup({
           <span className="font-medium">Water level</span>
         </span>
       </legend>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2">
           {WATER_LEVEL_OPTIONS.map(option => (
             <label key={option.value} className="block cursor-pointer">
               <input
@@ -109,7 +109,7 @@ function WaterLevelButtonGroup({
               />
               <span
                 className={cn(
-                  'flex h-20 flex-col items-center justify-center gap-1 rounded-md border border-border bg-surface px-2.5 py-3 text-center',
+                  'flex h-[4.25rem] flex-col items-center justify-center gap-1 rounded-md border border-border bg-surface px-2 py-2 text-center sm:h-20 sm:px-2.5 sm:py-3',
                   'transition-colors hover:border-primary/60 hover:bg-primary-soft/30',
                   'peer-focus-visible:border-primary peer-focus-visible:ring-1 peer-focus-visible:ring-ring',
                   'peer-checked:border-primary peer-checked:bg-primary-soft/70 peer-checked:text-primary'
@@ -189,7 +189,7 @@ function FloodLevelPersonScale({ value }: { value: FloodReportWaterLevel }) {
 
   return (
     <div
-      className="relative mx-auto flex h-full min-h-[31rem] w-full items-end justify-center overflow-hidden rounded-md border border-border bg-surface"
+      className="relative mx-auto flex h-full min-h-[27rem] w-full items-end justify-center overflow-hidden rounded-md border border-border bg-surface sm:min-h-[31rem]"
       aria-label={`Flood level visualization: ${scale.label}`}
     >
       <div
@@ -211,7 +211,7 @@ function FloodLevelPersonScale({ value }: { value: FloodReportWaterLevel }) {
         src={floodPersonModelUrl}
         alt=""
         aria-hidden="true"
-        className="relative z-10 h-[28rem] w-48 object-contain"
+        className="relative z-10 h-[24rem] w-full max-w-36 object-contain sm:h-[28rem] sm:max-w-48"
       />
       <span className="absolute bottom-2 left-2 z-20 rounded-md bg-surface/95 px-2 py-1 text-caption font-semibold text-foreground shadow-raised">
         {isUnknown ? 'Unknown' : value}
